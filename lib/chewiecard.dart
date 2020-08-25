@@ -23,12 +23,22 @@ class _ChewieCardState extends State<ChewieCard> {
   void initState() {
     super.initState();
     _chewieController = ChewieController(
+      customControls: GestureDetector(
+        onTap: (){
+          _chewieController.toggleFullScreen();
+          _chewieController.play();
+        },
+        onDoubleTap: (){
+          _chewieController.pause();
+        },
+      ),
       videoPlayerController: widget.videoPlayerController,
-      showControls: false,
+      showControls: true,
       showControlsOnInitialize: false,
       autoInitialize: true,
       looping: widget.looping,
       autoPlay: true,
+      allowMuting: false,
       errorBuilder: (context, errorMessage) {
         return Center(
           child: Icon(Icons.error_outline, color: Colors.white,),

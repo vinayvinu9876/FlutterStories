@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:stories/chewiecard.dart';
+import 'package:stories/fullscreenimage.dart';
 import 'package:video_player/video_player.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -35,8 +36,11 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
+  bool initialised = false;
   void initialiseApp()async{
-    await Firebase.initializeApp();
+    await Firebase.initializeApp().whenComplete(() => setState((){
+      initialised = true;
+    }));
   }
 
   @override
@@ -53,7 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
           centerTitle: true,
         ),
         body: Container(
-          child: StreamBuilder(
+          child: initialised?StreamBuilder(
               stream: FirebaseFirestore.instance.collection('Stories').snapshots(),
               builder: (context, snapshot) {
                 return StaggeredGridView.countBuilder(
@@ -68,14 +72,34 @@ class _MyHomePageState extends State<MyHomePage> {
                             elevation: 5.0,
                             child: Padding(
                               padding: const EdgeInsets.all(2.0),
-                              child: Image.network(
-                                  snapshot.data.docs[index].get('link'),
-                                  alignment: Alignment.center,
-                                  fit: BoxFit.fill,
-                                  errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
-                                    return Icon(Icons.error_outline, color: Colors.white,);
-                                  },
-                                ),
+                              child: GestureDetector(
+                                onTap: (){
+                                  Navigator.push(context, PageRouteBuilder(
+                                    pageBuilder: (context, animation, secondaryAnimation) => FullImage(imageLink: snapshot.data.docs[index].get('link'),),
+                                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                      var begin = Offset(0.0, 1.0);
+                                      var end = Offset.zero;
+                                      var curve = Curves.ease;
+
+                                      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+
+                                      return SlideTransition(
+                                        position: animation.drive(tween),
+                                        child: child,
+                                      );
+                                    },
+                                  ),
+                                 );
+                                },
+                                child: Image.network(
+                                    snapshot.data.docs[index].get('link'),
+                                    alignment: Alignment.center,
+                                    fit: BoxFit.fill,
+                                    errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+                                      return Icon(Icons.error_outline, color: Colors.white,);
+                                    },
+                                  ),
+                              ),
                             ),
                           )
                           : ChewieCard(
@@ -90,7 +114,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   mainAxisSpacing: 4.0,
                   crossAxisSpacing: 4.0,
                 );
-              }),
+              }):Container(),
         ),
       ),
     );
